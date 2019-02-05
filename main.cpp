@@ -44,7 +44,7 @@ int main(int argc,  char** argv)
         }
     }
 
-    for(int i=0; i<files.size(); i++)
+    for(unsigned int i=0; i<files.size(); i++)
     {
         string arg = files[i];
 
@@ -63,11 +63,7 @@ int main(int argc,  char** argv)
         unsigned int swizzling,pal_off;
 
         vector<int> pixels;
-
-        vector<int> pal_r;
-        vector<int> pal_g;
-        vector<int> pal_b;
-        vector<int> pal_a;
+        vector<sf::Color> pal_color;
 
         sf::Image image;
 
@@ -163,36 +159,12 @@ int main(int argc,  char** argv)
         ///reading palette
         for(int i=0; i<pal_size; i++)
         {
-            uint8_t u_R;
-            uint8_t u_G;
-            uint8_t u_B;
-            uint8_t u_A;
-
-            int R;
-            int G;
-            int B;
-            int A;
+            uint32_t color;
 
             gxt.seekg(pal_off+(i*4));
-            gxt.read(reinterpret_cast<char*>(&u_R), sizeof(uint8_t));
-            R = static_cast<int>(u_R);
+            gxt.read(reinterpret_cast<char*>(&color), sizeof(uint32_t));
 
-            gxt.seekg(pal_off+(i*4)+1);
-            gxt.read(reinterpret_cast<char*>(&u_G), sizeof(uint8_t));
-            G = static_cast<int>(u_G);
-
-            gxt.seekg(pal_off+(i*4)+2);
-            gxt.read(reinterpret_cast<char*>(&u_B), sizeof(uint8_t));
-            B = static_cast<int>(u_B);
-
-            gxt.seekg(pal_off+(i*4)+3);
-            gxt.read(reinterpret_cast<char*>(&u_A), sizeof(uint8_t));
-            A = static_cast<int>(u_A);
-
-            pal_r.push_back(R);
-            pal_g.push_back(G);
-            pal_b.push_back(B);
-            pal_a.push_back(A);
+            pal_color.push_back(sf::Color(color&0xFF,(color>>8)&0xFF,(color>>16)&0xFF,(color>>24)&0xFF));
         }
 
         ///reading pixels
@@ -213,13 +185,8 @@ int main(int argc,  char** argv)
 
             if(pal_size == 16)
             {
-                int pixel_1,pixel_2;
-
-                pixel_1 = floor(pixel/16);
-                pixel_2 = pixel - pixel_1*16;
-
-                pixels.push_back(pixel_2);
-                pixels.push_back(pixel_1);
+                pixels.push_back(pixel&0xF);
+                pixels.push_back((pixel>>4)&0xF);
             }
         }
 
@@ -247,7 +214,7 @@ int main(int argc,  char** argv)
                     if(x+cw < width)
                     if(y+ch < height)
                     {
-                        image.setPixel(x+cw,y+ch,sf::Color(pal_r[pixels[p]],pal_g[pixels[p]],pal_b[pixels[p]],pal_a[pixels[p]]));
+                        image.setPixel(x+cw,y+ch,pal_color[pixels[p]]);
                         p++;
                     }
                 }
