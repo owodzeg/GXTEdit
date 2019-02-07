@@ -10,55 +10,31 @@ int main(int argc,  char** argv)
 
     if(argc < 2)
     {
-        cout << "Usage: GXTEditCMD.exe <file1> [file2, file3...] [chunk_w=, chunk_h=]" << endl << "Check \"HOW TO USE.txt\" for more details." << endl;
+        cout << "Usage: GXTEditCMD.exe <file1> [file2, file3...]" << endl << "Check \"HOW TO USE.txt\" for more details." << endl;
         return 1;
     }
 
     vector<std::string> files;
 
-    int cus_w=1,cus_h=1;
-    bool custom_chunk = false;
-
     if(argc >= 2)
     {
         for(int i=1; i<argc; i++)
         {
-            string param = argv[i];
-
-            if(param.find("chunk_w=") != std::string::npos)
-            {
-                string val = param.substr(param.find_first_of("=")+1);
-                cus_w = atoi(val.c_str());
-                custom_chunk = true;
-            }
-            else if(param.find("chunk_h=") != std::string::npos)
-            {
-                string val = param.substr(param.find_first_of("=")+1);
-                cus_h = atoi(val.c_str());
-                custom_chunk = true;
-            }
-            else
-            {
-                files.push_back(param);
-            }
+            files.push_back(string(argv[i]));
         }
     }
 
     for(unsigned int i=0; i<files.size(); i++)
     {
-        string arg = files[i];
-
-        string name_a = arg.substr(arg.find_last_of("\\")+1);
+        string name_a = files[i].substr(files[i].find_last_of("\\")+1);
         string name_b = name_a.substr(0,name_a.find_last_of("."));
-
-        string filename = files[i];
 
         int length;
         int image_param;
         int image_info;
         int pal_size = 16;
         int width,height;
-        int chunk_w=cus_w,chunk_h=cus_h;
+        int chunk_w=1,chunk_h=1;
 
         unsigned int swizzling,pal_off;
 
@@ -67,9 +43,9 @@ int main(int argc,  char** argv)
 
         sf::Image image;
 
-        ifstream gxt(filename.c_str(), std::ios::binary);
+        ifstream gxt(files[i].c_str(), std::ios::binary);
 
-        cout << "Reading " << filename << endl;
+        cout << "Reading " << files[i] << endl;
 
         int image_info_off;
         int image_info_size;
@@ -78,18 +54,11 @@ int main(int argc,  char** argv)
         gxt.read(reinterpret_cast<char*>(&image_info_off), sizeof(uint32_t));
         image_info = image_info_off + 0x40;
 
-        cout << "Image info offset: 0x" << std::hex << image_info_off << std::dec << endl;
-        cout << "Image info: 0x" << std::hex << image_info << std::dec << endl;
-
         gxt.seekg(image_info_off+0x4);
         gxt.read(reinterpret_cast<char*>(&image_info_size), sizeof(uint32_t));
 
-        cout << "Image info size: 0x" << std::hex << image_info_size << std::dec << endl;
-
         gxt.seekg(0x10);
         gxt.read(reinterpret_cast<char*>(&image_param), sizeof(uint32_t));
-
-        cout << "Image param offset: 0x" << std::hex << image_param << std::dec << endl;
 
         ///reading px length
         gxt.seekg(0x44);
@@ -105,6 +74,7 @@ int main(int argc,  char** argv)
 
         gxt.seekg(image_info + image_info_size - 0x8);
         gxt.read(reinterpret_cast<char*>(&pl_tmp), sizeof(uint8_t));
+
         if(pl_tmp == 0x2)
         {
             pal_size = 16;
@@ -128,32 +98,25 @@ int main(int argc,  char** argv)
 
         int px_start = pal_off - 0x40 - length;
 
-        cout << "Palette offset: 0x" << std::hex << pal_off << std::dec << endl;
-        cout << "Pixel data offset: 0x" << std::hex << px_start << std::dec << endl << endl;
         cout << "Detected colors: " << pal_size << endl;
         cout << "Amount of pixels: " << length << endl;
         cout << endl << "Image width: " << width << "   Image height: " << height << endl;
 
         if(swizzling == 1)
         {
-            cout << "SWIZZLING ENABLED! You might want to adjust the chunks with arrow keys." << endl;
-
-            if(!custom_chunk)
+            if(pal_size == 16)
             {
-                if(pal_size == 16)
-                {
-                    cout << "Preset swizzling set to 32x8 for 16 color textures" << endl;
-                    chunk_w = 32;
-                    chunk_h = 8;
-                }
-
-                if(pal_size == 256)
-                {
-                    cout << "Preset swizzling set to 16x8 for 256 color textures" << endl;
-                    chunk_w = 16;
-                    chunk_h = 8;
-                }
+                chunk_w = 32;
+                chunk_h = 8;
             }
+
+            if(pal_size == 256)
+            {
+                chunk_w = 16;
+                chunk_h = 8;
+            }
+
+            cout << "Preset swizzling set to " << chunk_w << "x" << chunk_h << " for " << pal_size << " color textures" << endl;
         }
 
         ///reading palette
@@ -182,8 +145,7 @@ int main(int argc,  char** argv)
             {
                 pixels.push_back(pixel);
             }
-
-            if(pal_size == 16)
+            else if(pal_size == 16)
             {
                 pixels.push_back(pixel&0xF);
                 pixels.push_back((pixel>>4)&0xF);
@@ -235,7 +197,7 @@ int main(int argc,  char** argv)
         }
 
         image.saveToFile(name_b+".png");
-        cout << "Done." << endl;
+        cout << "Saving as " << name_b << ".png" << endl;
     }
 
     return 0;
