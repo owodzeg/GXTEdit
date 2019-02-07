@@ -6,7 +6,7 @@ using namespace std;
 
 int main(int argc,  char** argv)
 {
-    cout << "GXTEdit CMD v2.0 by Owocek (30th January 2019)" << endl << endl;
+    cout << "GXTEdit CMD v2.01 by Owocek (7th February 2019)" << endl << endl;
 
     if(argc < 2)
     {
@@ -29,14 +29,14 @@ int main(int argc,  char** argv)
         string name_a = files[i].substr(files[i].find_last_of("\\")+1);
         string name_b = name_a.substr(0,name_a.find_last_of("."));
 
-        int length;
-        int image_param;
-        int image_info;
+        int length,width,height;
         int pal_size = 16;
-        int width,height;
         int chunk_w=1,chunk_h=1;
+        int swizzling=0;
 
-        unsigned int swizzling,pal_off;
+        uint32_t image_param,image_info;
+        uint32_t image_info_off,image_info_size;
+        uint32_t pal_off;
 
         vector<int> pixels;
         vector<sf::Color> pal_color;
@@ -46,9 +46,6 @@ int main(int argc,  char** argv)
         ifstream gxt(files[i].c_str(), std::ios::binary);
 
         cout << "Reading " << files[i] << endl;
-
-        int image_info_off;
-        int image_info_size;
 
         gxt.seekg(0x28);
         gxt.read(reinterpret_cast<char*>(&image_info_off), sizeof(uint32_t));
@@ -158,6 +155,14 @@ int main(int argc,  char** argv)
 
             width = 64;
             height = 64;
+        }
+
+        if((width == 137) or (height == 78))
+        {
+            cout << "Applying rtbl fix (for P3 teamcard thumbnails)" << endl;
+
+            width = 144;
+            height = 80;
         }
 
         gxt.close();
