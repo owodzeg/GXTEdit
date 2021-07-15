@@ -6,7 +6,7 @@ using namespace std;
 
 int main(int argc,  char** argv)
 {
-    cout << "GXTEdit CMD v2.01 by Owocek (7th February 2019)" << endl << endl;
+    cout << "GXTEdit CMD v2.11 by Owocek (30th October 2019)" << endl << endl;
 
     if(argc < 2)
     {
